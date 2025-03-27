@@ -1,0 +1,290 @@
+#include <PS4Controller.h>
+#include <ESP32Servo.h>
+
+// Adresse MAC de ta manette PS4 sous forme de chaîne de caractères
+const char* myControllerAddress = "3c:8a:1f:a2:e3:7a";
+
+// Moteur A
+const int A_IN1 = 25; 
+const int A_IN2 = 26;
+const int A_ENA = 27;  
+
+// Moteur B
+const int B_IN1 = 32; 
+const int B_IN2 = 33;
+const int B_ENA = 12;  
+
+// Moteur C
+const int C_IN1 = 18; 
+const int C_IN2 = 19;
+const int C_ENA = 5;  
+
+// Moteur D
+const int D_IN1 = 23; 
+const int D_IN2 = 22;
+const int D_ENA = 21; 
+
+// Variables pour le servo
+Servo myservo;  // Objet pour contrôler le servo
+int posVal = 90; // Position actuelle du servo (initialisée à 90°)
+const int servoPin = 15; // Broche du servo
+bool servoAt180 = false; // État du servo (false = 90°, true = 180°)
+
+// Fonction pour contrôler les moteurs et le servo en fonction des commandes.
+void controlMotors(char command) {
+    if (command == 'w') { // Avant
+        digitalWrite(A_IN1, LOW);
+        digitalWrite(A_IN2, HIGH);
+        digitalWrite(B_IN1, LOW);
+        digitalWrite(B_IN2, HIGH);
+        digitalWrite(C_IN1, HIGH);
+        digitalWrite(C_IN2, LOW);
+        digitalWrite(D_IN1, HIGH);
+        digitalWrite(D_IN2, LOW);      
+    } 
+    else if (command == 's') { // Arrière
+        digitalWrite(A_IN1, HIGH);
+        digitalWrite(A_IN2, LOW);
+        digitalWrite(B_IN1, HIGH);
+        digitalWrite(B_IN2, LOW);            
+        digitalWrite(C_IN1, LOW);
+        digitalWrite(C_IN2, HIGH);
+        digitalWrite(D_IN1, LOW);
+        digitalWrite(D_IN2, HIGH);
+    } 
+    else if (command == 'd') { // Latéral droit
+      digitalWrite(A_IN1, LOW);
+      digitalWrite(A_IN2, HIGH);
+      digitalWrite(B_IN1, HIGH);
+      digitalWrite(B_IN2, LOW);            
+      digitalWrite(C_IN1, LOW);
+      digitalWrite(C_IN2, HIGH);
+      digitalWrite(D_IN1, HIGH);
+      digitalWrite(D_IN2, LOW);
+    } 
+    else if (command == 'a') { // Latéral gauche
+      digitalWrite(A_IN1, HIGH);
+      digitalWrite(A_IN2, LOW);
+      digitalWrite(B_IN1, LOW);
+      digitalWrite(B_IN2, HIGH);            
+      digitalWrite(C_IN1, HIGH);
+      digitalWrite(C_IN2, LOW);
+      digitalWrite(D_IN1, LOW);
+      digitalWrite(D_IN2, HIGH);
+    } 
+    else if (command == 'z') { // Diagonal arrière gauche
+      digitalWrite(A_IN1, HIGH);
+      digitalWrite(A_IN2, LOW);
+      digitalWrite(B_IN1, LOW);
+      digitalWrite(B_IN2, LOW);            
+      digitalWrite(C_IN1, LOW);
+      digitalWrite(C_IN2, LOW);
+      digitalWrite(D_IN1, LOW);
+      digitalWrite(D_IN2, HIGH);
+    }
+    else if (command == 'x') { // Diagonal arrière droite
+      digitalWrite(A_IN1, LOW);
+      digitalWrite(A_IN2, LOW);
+      digitalWrite(B_IN1, HIGH);
+      digitalWrite(B_IN2, LOW);            
+      digitalWrite(C_IN1, LOW);
+      digitalWrite(C_IN2, HIGH);
+      digitalWrite(D_IN1, LOW);
+      digitalWrite(D_IN2, LOW);
+    }
+    else if (command == 'q') { // Diagonal avant droite
+      digitalWrite(A_IN1, LOW);
+      digitalWrite(A_IN2, HIGH);
+      digitalWrite(B_IN1, LOW);
+      digitalWrite(B_IN2, LOW);            
+      digitalWrite(C_IN1, LOW);
+      digitalWrite(C_IN2, LOW);
+      digitalWrite(D_IN1, HIGH);
+      digitalWrite(D_IN2, LOW);
+    }  
+    else if (command == 'e') { // Diagonal avant gauche
+      digitalWrite(A_IN1, LOW);
+      digitalWrite(A_IN2, LOW);
+      digitalWrite(B_IN1, LOW);
+      digitalWrite(B_IN2, HIGH);            
+      digitalWrite(C_IN1, HIGH);
+      digitalWrite(C_IN2, LOW);
+      digitalWrite(D_IN1, LOW);
+      digitalWrite(D_IN2, LOW);
+    }  
+    else if (command == 'r') { // Rotation droite
+      digitalWrite(A_IN1, LOW);
+      digitalWrite(A_IN2, HIGH);
+      digitalWrite(B_IN1, HIGH);
+      digitalWrite(B_IN2, LOW);            
+      digitalWrite(D_IN1, LOW);
+      digitalWrite(D_IN2, HIGH);
+      digitalWrite(C_IN1, HIGH);
+      digitalWrite(C_IN2, LOW);
+    } 
+    else if (command == 'f') { // Rotation gauche
+      digitalWrite(A_IN1, HIGH);
+      digitalWrite(A_IN2, LOW);
+      digitalWrite(B_IN1, LOW);
+      digitalWrite(B_IN2, HIGH);            
+      digitalWrite(D_IN1, HIGH);
+      digitalWrite(D_IN2, LOW);
+      digitalWrite(C_IN1, LOW);
+      digitalWrite(C_IN2, HIGH);
+    } 
+    else if (command == ' ') { // Stop
+        digitalWrite(A_IN1, LOW);
+        digitalWrite(A_IN2, LOW);
+        digitalWrite(B_IN1, LOW);
+        digitalWrite(B_IN2, LOW);      
+        digitalWrite(C_IN1, LOW);
+        digitalWrite(C_IN2, LOW);
+        digitalWrite(D_IN1, LOW);
+        digitalWrite(D_IN2, LOW);      
+    }
+    else if (command == 'v') { // Commande pour le servo (bouton carré)
+        if (servoAt180) {
+            // Faire revenir le servo à 90°
+            for (int i = posVal; i >= 90; i--) {
+                myservo.write(i);
+                delay(15); // Vitesse de rotation
+            }
+            posVal = 90; // Mettre à jour la position actuelle
+            servoAt180 = false; // Mettre à jour l'état du servo
+            Serial.println("Commande Servo : Rotation à 90°");
+        } else {
+            // Faire tourner le servo à 180°
+            for (int i = posVal; i <= 180; i++) {
+                myservo.write(i);
+                delay(15); // Vitesse de rotation
+            }
+            posVal = 180; // Mettre à jour la position actuelle
+            servoAt180 = true; // Mettre à jour l'état du servo
+            Serial.println("Commande Servo : Rotation à 180°");
+        }
+    }
+}
+
+// Fonction pour traiter les données du joystick.
+void processGamepad() {
+    int axisY = PS4.LStickY();  // Joystick gauche (avant/arrière)
+    int axisX = PS4.LStickX();  // Joystick gauche (gauche/droite)
+    int axisRX = PS4.RStickX(); // Joystick droit (rotation)
+
+    Serial.printf("axisY: %d, axisX: %d, axisRX: %d\n", axisY, axisX, axisRX);
+
+    if ((axisY < -30) && (axisX < -30)) { // Joystick gauche diagonale arrière gauche
+      controlMotors('z');
+      Serial.println("Direction: Diagonale arrière Gauche");
+    }
+    else if ((axisY < -30) && (axisX > 30)) { // Joystick gauche diagonale arrière droite
+      controlMotors('x');
+      Serial.println("Direction: Diagonale arrière Droite");
+    }
+    else if ((axisY > 30) && (axisX < -30)) { // Joystick gauche diagonale avant gauche
+      controlMotors('e');
+      Serial.println("Direction: Diagonale avant Gauche");
+    }
+    else if ((axisY > 30) && (axisX > 30)) { // Joystick gauche diagonale avant droite
+      controlMotors('q');
+      Serial.println("Direction: Diagonale avant Droite");
+    }
+    else if (axisY > 30) { // Joystick gauche vers l'avant
+        controlMotors('w');
+        Serial.println("Direction: Avant");
+    } 
+    else if (axisY < -30) { // Joystick gauche vers l'arrière
+        controlMotors('s');
+        Serial.println("Direction: Arrière");
+    } 
+    else if (axisX > 30) { // Joystick gauche vers la droite
+        controlMotors('d');
+        Serial.println("Direction: Droite");
+    } 
+    else if (axisX < -30) { // Joystick gauche vers la gauche
+        controlMotors('a');
+        Serial.println("Direction: Gauche");
+    }
+    else if (axisRX > 30) { // Joystick droit vers la droite
+        controlMotors('r');
+        Serial.println("Direction: Rotation Droite");
+    } 
+    else if (axisRX < -30) { // Joystick droit vers la gauche
+        controlMotors('f');
+        Serial.println("Direction: Rotation Gauche");
+    } 
+    else { // Joystick au centre
+        controlMotors(' ');
+        Serial.println("Direction: Stop");
+    }
+
+    // Gestion du bouton carré pour le servo
+    if (PS4.Square()) { // Si le bouton carré est pressé
+        controlMotors('v'); // Envoyer la commande pour le servo
+    }
+}
+
+// Callback appelée lorsqu'une manette est connectée.
+void onConnect() {
+    Serial.println("Manette PS4 connectée !");
+}
+
+// Callback appelée lorsqu'une manette est déconnectée.
+void onDisconnect() {
+    Serial.println("Manette PS4 déconnectée.");
+    controlMotors(' '); // Arrêter les moteurs en cas de déconnexion
+}
+
+// Configuration initiale.
+void setup() {
+    Serial.begin(115200);
+
+    // Configurer les broches des moteurs en sortie
+    pinMode(A_IN1, OUTPUT);
+    pinMode(A_IN2, OUTPUT);
+    pinMode(A_ENA, OUTPUT);
+    pinMode(B_IN1, OUTPUT);
+    pinMode(B_IN2, OUTPUT);
+    pinMode(B_ENA, OUTPUT);
+    pinMode(C_IN1, OUTPUT);
+    pinMode(C_IN2, OUTPUT);
+    pinMode(C_ENA, OUTPUT);
+    pinMode(D_IN1, OUTPUT);
+    pinMode(D_IN2, OUTPUT);
+    pinMode(D_ENA, OUTPUT);
+
+    // Initialiser les moteurs à l'arrêt
+    digitalWrite(A_IN1, LOW);
+    digitalWrite(A_IN2, LOW);
+    digitalWrite(B_IN1, LOW);
+    digitalWrite(B_IN2, LOW);
+    digitalWrite(C_IN1, LOW);
+    digitalWrite(C_IN2, LOW);
+    digitalWrite(D_IN1, LOW);
+    digitalWrite(D_IN2, LOW);
+
+    analogWrite(A_ENA, 255);
+    analogWrite(B_ENA, 255);
+    analogWrite(C_ENA, 255);
+    analogWrite(D_ENA, 255);
+
+    // Initialiser PS4Controller
+    PS4.begin(myControllerAddress);
+    PS4.attachOnConnect(onConnect);
+    PS4.attachOnDisconnect(onDisconnect);
+
+    // Initialisation du servo
+    myservo.setPeriodHertz(50); // Fréquence standard pour un servo (50 Hz)
+    myservo.attach(servoPin, 500, 2500); // Attacher le servo à la broche
+    myservo.write(posVal); // Initialiser la position du servo à 90°
+
+    Serial.println("En attente de la manette PS4...");
+}
+
+// Boucle principale.
+void loop() {
+    if (PS4.isConnected()) {
+        processGamepad();
+    }
+    delay(50); // Petit délai pour éviter de surcharger le processeur
+}
